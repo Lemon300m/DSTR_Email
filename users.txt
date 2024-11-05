@@ -9,4 +9,3 @@ grace@yahoo.com, 567, Grace
 henry@outlook.com, 890, Henry
 irene@yahoo.com, 1234, Irene
 john@gmail.com, 123, John
-anon@proton.me, 123, anon
