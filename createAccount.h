@@ -83,7 +83,7 @@ inline void createAccount(const string& filePath) {
     if (outFile.is_open()) {
         outFile << email << ", " << password << ", " << username << "\n";
         outFile.close();
-        cout << "User successfully registered!\n";
+        cout << "User successfully registered! Please log in.\n";
     } else {
         cerr << "Error: Could not open file for writing.\n";
     }
