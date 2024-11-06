@@ -3,9 +3,10 @@
 #include <string>
 #include <sstream>
 #include <limits>
-#include <cstdlib> //This is mainly just for the exit function
+#include <cstdlib>
 
-#include "performSearch.h"
+#include "commonFunction.h"
+#include "outbox.h"
 #include "accessInbox.h"
 #include "deleteAccount.h"
 #include "createAccount.h"
@@ -64,12 +65,6 @@ private:
             }
         }
         file.close();
-    }
-
-    string trim(const string& str) {
-        size_t first = str.find_first_not_of(" \t");
-        size_t last = str.find_last_not_of(" \t");
-        return (first == string::npos) ? "" : str.substr(first, (last - first + 1));
     }
 
     void addUserToLinkedList(const string& email, const string& password, const string& name) {
@@ -152,21 +147,10 @@ public:
         clearScreen();
         cout << "You have been logged out.\n";
     }
-
-    void clearScreen() {
-        #ifdef _WIN32
-            system("cls");
-        #else
-            system("clear");
-        #endif
-    }
-
-    void wait(int time){
-        Sleep(time);
-    }
 };
 
 int main() {
+    string time = getCurrentTimeAsString();
     LoginSystem system;
     string userfilePath = "users.txt";
 
@@ -174,6 +158,7 @@ int main() {
         int choice;
         bool valid_input = false;
         do {
+            cout << time << endl;
             cout << R"(==============================================
 Main Menu:
     1. Login
@@ -190,37 +175,52 @@ Choose an option: )";
                 switch (choice) {
                     case 0:
                         cout << "Terminating the program. See You Space Cowboy!\n";
-                        system.wait(900);
+                        wait(900);
                         exit(0);
                     case 1:
-                        system.clearScreen();
+                        clearScreen();
                         if (system.verifyLogin()) {
-                            system.clearScreen();
+                            clearScreen();
                             LoginSystem::UserDetails userDetails = system.getDetail();
                             cout << "Login successful. Welcome, " << userDetails.name << "!\n";
                             bool logOut = false;
                             int action;
                             while (!logOut) {
-                                bool valid_input = false;
+                                bool inner_valid_input = false;
                                 do {
                                     cout << R"(==============================================
 Available actions:
-    1. Perform Search
+    1. Send an email
     2. Access Inbox
     3. Delete Account
     0. Logout
 ==============================================
 Select an action: )";
                                     cin >> action;
-                                    if (!(valid_input = !cin.fail())) { 
+                                    if (!(inner_valid_input = !cin.fail())) { 
                                         cout << "That input is invalid!\n";
                                         cin.clear();
                                         cin.ignore((numeric_limits<streamsize>::max)(), '\n');
                                     } else {
                                         switch (action) {
-                                            case 1:
-                                                performSearch();
+                                            case 1: {
+                                                string receiver, title, content, spamFile = "spam_words.txt";
+                                                cout << "Enter receiver email: ";
+                                                cin.ignore();
+                                                getline(cin, receiver);
+                                                cout << "Enter title: ";
+                                                getline(cin, title);
+                                                cout << "Enter content: ";
+                                                getline(cin, content);
+
+                                                // Add email to the outbox, checking for spam
+                                                addEmail(userDetails.email, receiver, title, content, spamFile);
+                                                cout << "Email added to outbox.\n";
+
+                                                // Display outbox contents (optional)
+                                                displayOutbox();
                                                 break;
+                                            }
                                             case 2:
                                                 accessInbox();
                                                 break;
@@ -238,13 +238,15 @@ Select an action: )";
                                                 break;
                                         }
                                     }
-                                } while (!valid_input);
+                                } while (!inner_valid_input);
                             }
                         }
                         break;
                     case 2:
-                        system.clearScreen();
+                        clearScreen();
                         createAccount(userfilePath);
+                        wait(2000);
+                        clearScreen();
                         break;
                     default:
                         cout << "Invalid Selection, please try again.\n";
