@@ -5,9 +5,7 @@
 
 using namespace std;
 
-const int MAX_EMAILS = 100; // Maximum number of emails the inbox can hold
-
-// Struct to store email details
+// Email structure
 struct Email {
     int id;
     string sender;
@@ -16,108 +14,156 @@ struct Email {
     string content;
 };
 
-// Class to manage inbox operations
-class Inbox {
+// Node for the doubly linked list
+struct Node {
+    Email email;
+    Node* prev;
+    Node* next;
+
+    Node(const Email& e) : email(e), prev(nullptr), next(nullptr) {}
+};
+
+// Doubly Linked List for Inbox Management
+class DoublyLinkedList {
 private:
-    Email emails[MAX_EMAILS];
+    Node* head;
+    Node* tail;
     int emailCount;
 
 public:
-    Inbox() : emailCount(0) {}
+    DoublyLinkedList() : head(nullptr), tail(nullptr), emailCount(0) {}
 
-    // Function to add a new email (used when reading from file)
-    void addEmailFromFile(const string& sender, const string& receiver, const string& subject, const string& content) {
-        if (emailCount < MAX_EMAILS) {
-            emails[emailCount].id = emailCount + 1; // Assigning a unique ID to each email
-            emails[emailCount].sender = sender;
-            emails[emailCount].receiver = receiver;
-            emails[emailCount].subject = subject;
-            emails[emailCount].content = content;
-            emailCount++;
-        } else {
-            cout << "Inbox is full! Cannot add more emails.\n";
+    ~DoublyLinkedList() {
+        Node* current = head;
+        while (current != nullptr) {
+            Node* nextNode = current->next;
+            delete current;
+            current = nextNode;
         }
     }
 
-    // Function to display all emails
+    // Add a new email at the end
+    void addEmail(const Email& email) {
+        Node* newNode = new Node(email);
+        if (tail == nullptr) { // If list is empty
+            head = tail = newNode;
+        } else {
+            tail->next = newNode;
+            newNode->prev = tail;
+            tail = newNode;
+        }
+        emailCount++;
+    }
+
+    // Display all emails
     void displayEmails() const {
-        if (emailCount == 0) {
+        if (head == nullptr) {
             cout << "Inbox is empty.\n";
             return;
         }
+
+        Node* current = head;
         cout << "ID\tSender\t\tSubject\n";
-        for (int i = 0; i < emailCount; i++) {
-            cout << emails[i].id << "\t" << emails[i].sender << "\t\t" << emails[i].subject << "\n";
+        while (current != nullptr) {
+            const Email& email = current->email;
+            cout << email.id << "\t" << email.sender << "\t\t" << email.subject << "\n";
+            current = current->next;
         }
     }
 
-    // Function to view a specific email by ID
+    // View email by ID
     void viewEmail(int id) const {
-        for (int i = 0; i < emailCount; i++) {
-            if (emails[i].id == id) {
-                cout << "Sender: " << emails[i].sender << "\n";
-                cout << "Subject: " << emails[i].subject << "\n";
-                cout << "Content:\n" << emails[i].content << "\n";
+        Node* current = head;
+        while (current != nullptr) {
+            if (current->email.id == id) {
+                const Email& email = current->email;
+                cout << "Sender: " << email.sender << "\n";
+                cout << "Receiver: " << email.receiver << "\n";
+                cout << "Subject: " << email.subject << "\n";
+                cout << "Content:\n" << email.content << "\n";
                 return;
             }
+            current = current->next;
         }
         cout << "Email with ID " << id << " not found.\n";
     }
 
-    // Function to delete an email by ID
+    // Delete email by ID
     void deleteEmail(int id) {
-        int index = -1;
-        for (int i = 0; i < emailCount; i++) {
-            if (emails[i].id == id) {
-                index = i;
-                break;
+        Node* current = head;
+        while (current != nullptr) {
+            if (current->email.id == id) {
+                if (current->prev) {
+                    current->prev->next = current->next;
+                } else {
+                    head = current->next;
+                }
+                if (current->next) {
+                    current->next->prev = current->prev;
+                } else {
+                    tail = current->prev;
+                }
+                delete current;
+                emailCount--;
+                cout << "Email with ID " << id << " deleted.\n";
+                return;
             }
+            current = current->next;
         }
-
-        if (index == -1) {
-            cout << "Email with ID " << id << " not found.\n";
-            return;
-        }
-
-        // Shift emails to fill the gap
-        for (int i = index; i < emailCount - 1; i++) {
-            emails[i] = emails[i + 1];
-        }
-        emailCount--;
-        cout << "Email deleted successfully!\n";
+        cout << "Email with ID " << id << " not found.\n";
     }
 
-    // Function to search emails by sender
+    // Search email by sender
     void searchBySender(const string& sender) const {
+        Node* current = head;
         bool found = false;
-        for (int i = 0; i < emailCount; i++) {
-            if (emails[i].sender == sender) {
-                cout << "ID: " << emails[i].id << ", Subject: " << emails[i].subject << "\n";
+        while (current != nullptr) {
+            if (current->email.sender == sender) {
+                const Email& email = current->email;
+                cout << "ID: " << email.id << ", Subject: " << email.subject << "\n";
                 found = true;
             }
+            current = current->next;
         }
         if (!found) {
-            cout << "No emails found from " << sender << ".\n";
+            cout << "No emails found from sender: " << sender << "\n";
         }
     }
 
-    // Function to load emails from a file
+    // Search email by title (subject)
+    void searchByTitle(const string& title) const {
+        Node* current = head;
+        bool found = false;
+        while (current != nullptr) {
+            if (current->email.subject == title) {
+                const Email& email = current->email;
+                cout << "ID: " << email.id << ", Sender: " << email.sender << "\n";
+                found = true;
+            }
+            current = current->next;
+        }
+        if (!found) {
+            cout << "No emails found with title: " << title << "\n";
+        }
+    }
+
+    // Parse and add emails from a file
     void loadEmailsFromFile(const string& filename) {
         ifstream file(filename);
         if (!file.is_open()) {
-            cout << "Failed to open the file.\n";
+            cout << "Failed to open the file: " << filename << "\n";
             return;
         }
 
         string line;
         while (getline(file, line)) {
-            stringstream ss(line);
+            stringstream emailStream(line);
             string sender, receiver, subject, content;
-
-            // Read each field separated by a comma
-            if (getline(ss, sender, ',') && getline(ss, receiver, ',') &&
-                getline(ss, subject, ',') && getline(ss, content)) {
-                addEmailFromFile(sender, receiver, subject, content);
+            if (getline(emailStream, sender, ',') &&
+                getline(emailStream, receiver, ',') &&
+                getline(emailStream, subject, ',') &&
+                getline(emailStream, content)) {
+                addEmail({emailCount + 1, sender, receiver, subject, content});
             }
         }
         file.close();
@@ -125,56 +171,65 @@ public:
     }
 };
 
-// Main function to demonstrate inbox functionality
 int main() {
-    Inbox myInbox;
-    string filename = "emails.txt"; // Name of the file containing email data
+    DoublyLinkedList inbox;
 
-    // Load emails from file
-    myInbox.loadEmailsFromFile(filename);
+    // Load emails from email.txt
+    string filename = "emails.txt";
+    inbox.loadEmailsFromFile(filename);
 
+    // Menu
     int choice;
     do {
-        cout << "\nInbox Management System\n";
-        cout << "1. Display All Emails\n";
+        cout << "\nInbox Management\n";
+        cout << "1. View All Received Emails\n";
         cout << "2. View Email by ID\n";
         cout << "3. Delete Email by ID\n";
         cout << "4. Search Email by Sender\n";
+        cout << "5. Search Email by Title\n";
         cout << "0. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
         switch (choice) {
             case 1:
-                myInbox.displayEmails();
+                inbox.displayEmails();
                 break;
             case 2: {
                 int id;
                 cout << "Enter email ID to view: ";
                 cin >> id;
-                myInbox.viewEmail(id);
+                inbox.viewEmail(id);
                 break;
             }
             case 3: {
                 int id;
                 cout << "Enter email ID to delete: ";
                 cin >> id;
-                myInbox.deleteEmail(id);
+                inbox.deleteEmail(id);
                 break;
             }
             case 4: {
-                cin.ignore(); // to handle input buffer
+                cin.ignore(); // Clear the input buffer
                 string sender;
                 cout << "Enter sender to search: ";
                 getline(cin, sender);
-                myInbox.searchBySender(sender);
+                inbox.searchBySender(sender);
+                break;
+            }
+            case 5: {
+                cin.ignore(); // Clear the input buffer
+                string title;
+                cout << "Enter title to search: ";
+                getline(cin, title);
+                inbox.searchByTitle(title);
                 break;
             }
             case 0:
-                cout << "Exiting the program.\n";
+                cout << "Exiting...\n";
                 break;
             default:
-                cout << "Invalid choice. Please try again.\n";
+                cout << "Invalid choice. Try again.\n";
                 break;
         }
     } while (choice != 0);
