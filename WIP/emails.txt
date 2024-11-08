@@ -1,0 +1,10 @@
+jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
+bob@gmail.com,grace@yahoo.com,Project Details,Here are the project details you requested.
+david@outlook.com,john@gmail.com,Follow-up,Can you provide an update on the last meeting?user1@example.com,user2@example.com,Meeting Update,Please note the meeting is rescheduled.
+jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
+jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
+jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
+jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
+jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
+jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
+david@outlook.com,irene@yahoo.com,Follow-up,Can you provide an update on the last meeting?user1@example.com,user2@example.com,Meeting Update,Please note the meeting is rescheduled.
