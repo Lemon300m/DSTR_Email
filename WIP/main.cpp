@@ -6,8 +6,8 @@
 #include <cstdlib>
 
 #include "commonFunction.h"
-#include "outbox.h"    //If you are working on inbox, comment away line 10 and also line 209~211
-#include "inbox.h"    //If you are working on outbox, comment away line 9 and also line 215
+#include "outbox.h"    //If you are working on inbox, comment away line 9 and also line 209~211
+#include "inbox.h"    //If you are working on outbox, comment away line 10 and also line 215
 #include "deleteAccount.h"
 #include "createAccount.h"
 #include "windows.h"
