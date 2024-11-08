@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <algorithm>
+#include <cctype>
 
 using namespace std;
 
@@ -130,14 +132,24 @@ public:
         }
     }
 
+        // Global utility function for case-insensitive conversion
+    static string toLower(const string& str) {
+        string lowerStr = str;
+        transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+        return lowerStr;
+    }
+
     // Search email by title (subject)
     void searchByTitle(const string& title) const {
         Node* current = head;
         bool found = false;
+        string lowerTitle = toLower(title); // Convert input to lowercase for case-insensitive search
         while (current != nullptr) {
-            if (current->email.subject == title) {
+            string lowerSubject = toLower(current->email.subject); // Convert subject to lowercase
+            if (lowerSubject.find(lowerTitle) != string::npos) { // Check if title is a substring
                 const Email& email = current->email;
-                cout << "ID: " << email.id << ", Sender: " << email.sender << "\n";
+                cout << "ID: " << email.id << ", Sender: " << email.sender << ", Receiver: " << email.receiver << "\n";
+                cout << "Content: " << email.content << "\n\n";
                 found = true;
             }
             current = current->next;
@@ -146,6 +158,10 @@ public:
             cout << "No emails found with title: " << title << "\n";
         }
     }
+
+
+    
+
 
     // Parse and add emails from a file
     void loadEmailsFromFile(const string& filename) {
