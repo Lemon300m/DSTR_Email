@@ -7,7 +7,7 @@
 
 #include "commonFunction.h"
 #include "outbox.h"
-#include "accessInbox.h"
+#include "inbox.h"
 #include "deleteAccount.h"
 #include "createAccount.h"
 #include "windows.h"
@@ -153,6 +153,8 @@ int main() {
     string time = getCurrentTimeAsString();
     LoginSystem system;
     string userfilePath = "users.txt";
+    DoublyLinkedList inbox;
+    inbox.loadEmailsFromFile("emails.txt");
 
     while (true) {
         int choice;
@@ -204,25 +206,13 @@ Select an action: )";
                                     } else {
                                         switch (action) {
                                             case 1: {
-                                                string receiver, title, content, spamFile = "spam_words.txt";
-                                                cout << "Enter receiver email: ";
-                                                cin.ignore();
-                                                getline(cin, receiver);
-                                                cout << "Enter title: ";
-                                                getline(cin, title);
-                                                cout << "Enter content: ";
-                                                getline(cin, content);
-
-                                                // Add email to the outbox, checking for spam
-                                                addEmail(userDetails.email, receiver, title, content, spamFile);
-                                                cout << "Email added to outbox.\n";
-
-                                                // Display outbox contents (optional)
-                                                displayOutbox();
+                                                Queue outbox;
+                                                displayMenu(outbox);
+                                                return 0;
                                                 break;
                                             }
                                             case 2:
-                                                accessInbox();
+                                                inbox.inboxMenu();
                                                 break;
                                             case 3:
                                                 deleteAccount(userDetails.email, userfilePath);
