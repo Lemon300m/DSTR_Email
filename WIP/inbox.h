@@ -7,120 +7,145 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
+#include <unordered_set>
 
 using namespace std;
 
-// Email structure
-struct Email {
-    int id;
+// Renamed to InboxEmail to avoid conflict with outbox Email
+struct InboxEmail {
     string sender;
     string receiver;
     string subject;
     string content;
+    bool isSpam;
+
+    InboxEmail(const string &sender, const string &receiver, const string &subject, const string &content, bool isSpam)
+        : sender(sender), receiver(receiver), subject(subject), content(content), isSpam(isSpam) {}
 };
 
 // Node for the doubly linked list
 struct Node {
-    Email email;
-    Node* prev;
-    Node* next;
+    InboxEmail email;
+    Node *prev;
+    Node *next;
 
-    Node(const Email& e) : email(e), prev(nullptr), next(nullptr) {}
+    Node(const InboxEmail &e) : email(e), prev(nullptr), next(nullptr) {}
 };
 
 // Doubly Linked List for Inbox Management
 class DoublyLinkedList {
 private:
-    Node* head;
-    Node* tail;
-    int emailCount;
+    Node *head;
+    Node *tail;
+
+    bool isSpam(const string &content, const unordered_set<string> &spamWords) const {
+        for (const auto &word : spamWords) {
+            if (content.find(word) != string::npos) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    Node *getNodeByPosition(int position) const {
+        int currentIndex = 1;
+        Node *current = head;
+        while (current != nullptr) {
+            if (currentIndex == position) {
+                return current;
+            }
+            currentIndex++;
+            current = current->next;
+        }
+        return nullptr;
+    }
 
 public:
-    DoublyLinkedList() : head(nullptr), tail(nullptr), emailCount(0) {}
+    DoublyLinkedList() : head(nullptr), tail(nullptr) {}
 
     ~DoublyLinkedList() {
-        Node* current = head;
+        Node *current = head;
         while (current != nullptr) {
-            Node* nextNode = current->next;
+            Node *nextNode = current->next;
             delete current;
             current = nextNode;
         }
     }
 
-    void addEmail(const Email& email) {
-        Node* newNode = new Node(email);
-        if (tail == nullptr) {  // List is empty
+    void addEmail(const string &sender, const string &receiver, const string &subject, const string &content, const unordered_set<string> &spamWords) {
+        bool spamFlag = isSpam(content, spamWords);
+        Node *newNode = new Node(InboxEmail(sender, receiver, subject, content, spamFlag));
+        if (tail == nullptr) { // List is empty
             head = tail = newNode;
         } else {
             tail->next = newNode;
             newNode->prev = tail;
             tail = newNode;
         }
-        emailCount++;
     }
 
-    void displayEmails() const {
+    void displayEmails(const string &receiver, bool includeSpam) const {
         if (head == nullptr) {
             cout << "Inbox is empty.\n";
             return;
         }
 
-        Node* current = head;
-        cout << "ID\tSender\t\tSubject\n";
+        Node *current = head;
+        int position = 1;
+        cout << "No\tSender\t\tSubject\n";
         while (current != nullptr) {
-            const Email& email = current->email;
-            cout << email.id << "\t" << email.sender << "\t\t" << email.subject << "\n";
-            current = current->next;
-        }
-    }
-
-    void viewEmail(int id) const {
-        Node* current = head;
-        while (current != nullptr) {
-            if (current->email.id == id) {
-                const Email& email = current->email;
-                cout << "Sender: " << email.sender << "\n";
-                cout << "Receiver: " << email.receiver << "\n";
-                cout << "Subject: " << email.subject << "\n";
-                cout << "Content:\n" << email.content << "\n";
-                return;
+            const InboxEmail &email = current->email;
+            if (email.receiver == receiver && (includeSpam || !email.isSpam)) {
+                cout << position << "\t" << email.sender << "\t\t" << email.subject << "\n";
             }
+            position++;
             current = current->next;
         }
-        cout << "Email with ID " << id << " not found.\n";
     }
 
-    void deleteEmail(int id) {
-        Node* current = head;
-        while (current != nullptr) {
-            if (current->email.id == id) {
-                if (current->prev) {
-                    current->prev->next = current->next;
-                } else {
-                    head = current->next;
-                }
-                if (current->next) {
-                    current->next->prev = current->prev;
-                } else {
-                    tail = current->prev;
-                }
-                delete current;
-                emailCount--;
-                cout << "Email with ID " << id << " deleted.\n";
-                return;
-            }
-            current = current->next;
+    void viewEmail(int position, const string &receiver) const {
+        Node *node = getNodeByPosition(position);
+        if (node == nullptr || node->email.receiver != receiver || node->email.isSpam) {
+            cout << "Email not found or is marked as spam.\n";
+            return;
         }
-        cout << "Email with ID " << id << " not found.\n";
+
+        const InboxEmail &email = node->email;
+        cout << "Sender: " << email.sender << "\n";
+        cout << "Receiver: " << email.receiver << "\n";
+        cout << "Subject: " << email.subject << "\n";
+        cout << "Content:\n" << email.content << "\n";
     }
 
-    void searchBySender(const string& sender) const {
-        Node* current = head;
+    void deleteEmail(int position, const string &receiver) {
+        Node *node = getNodeByPosition(position);
+        if (node == nullptr || node->email.receiver != receiver) {
+            cout << "Email not found.\n";
+            return;
+        }
+
+        if (node->prev) {
+            node->prev->next = node->next;
+        } else {
+            head = node->next;
+        }
+        if (node->next) {
+            node->next->prev = node->prev;
+        } else {
+            tail = node->prev;
+        }
+        delete node;
+
+        cout << "Email deleted successfully.\n";
+    }
+
+    void searchBySender(const string &sender) const {
+        Node *current = head;
         bool found = false;
         while (current != nullptr) {
             if (current->email.sender == sender) {
-                const Email& email = current->email;
-                cout << "ID: " << email.id << ", Subject: " << email.subject << "\n";
+                const InboxEmail &email = current->email;
+                cout << "Sender: " << email.sender << ", Subject: " << email.subject << "\n";
                 found = true;
             }
             current = current->next;
@@ -130,16 +155,15 @@ public:
         }
     }
 
-    void searchByTitle(const string& title) const {
-        Node* current = head;
+    void searchByTitle(const string &title) const {
+        Node *current = head;
         bool found = false;
         string lowerTitle = toLower(title);
         while (current != nullptr) {
             string lowerSubject = toLower(current->email.subject);
             if (lowerSubject.find(lowerTitle) != string::npos) {
-                const Email& email = current->email;
-                cout << "ID: " << email.id << ", Sender: " << email.sender << ", Receiver: " << email.receiver << "\n";
-                cout << "Content: " << email.content << "\n\n";
+                const InboxEmail &email = current->email;
+                cout << "Sender: " << email.sender << ", Subject: " << email.subject << "\n";
                 found = true;
             }
             current = current->next;
@@ -149,7 +173,7 @@ public:
         }
     }
 
-    void loadEmailsFromFile(const string& filename) {
+    void loadEmailsFromFile(const string &filename, const unordered_set<string> &spamWords) {
         ifstream file(filename);
         if (!file.is_open()) {
             cout << "Failed to open the file: " << filename << "\n";
@@ -164,26 +188,26 @@ public:
                 getline(emailStream, receiver, ',') &&
                 getline(emailStream, subject, ',') &&
                 getline(emailStream, content)) {
-                addEmail({emailCount + 1, sender, receiver, subject, content});
+                addEmail(sender, receiver, subject, content, spamWords);
             }
         }
         file.close();
         cout << "Emails loaded successfully from " << filename << ".\n";
     }
 
-    static string toLower(const string& str) {
+    static string toLower(const string &str) {
         string lowerStr = str;
         transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
         return lowerStr;
     }
 
-    void inboxMenu() {
+    void inboxMenu(const string &receiver, const unordered_set<string> &spamWords) {
         int choice;
         do {
             cout << "\nInbox Management\n";
             cout << "1. View All Received Emails\n";
-            cout << "2. View Email by ID\n";
-            cout << "3. Delete Email by ID\n";
+            cout << "2. View Filtered Email by Position (No Spam)\n";
+            cout << "3. Delete Email by Position\n";
             cout << "4. Search Email by Sender\n";
             cout << "5. Search Email by Title\n";
             cout << "0. Return to Main Menu\n";
@@ -192,20 +216,20 @@ public:
 
             switch (choice) {
                 case 1:
-                    displayEmails();
+                    displayEmails(receiver, true);
                     break;
                 case 2: {
-                    int id;
-                    cout << "Enter email ID to view: ";
-                    cin >> id;
-                    viewEmail(id);
+                    int position;
+                    cout << "Enter position to view: ";
+                    cin >> position;
+                    viewEmail(position, receiver);
                     break;
                 }
                 case 3: {
-                    int id;
-                    cout << "Enter email ID to delete: ";
-                    cin >> id;
-                    deleteEmail(id);
+                    int position;
+                    cout << "Enter position to delete: ";
+                    cin >> position;
+                    deleteEmail(position, receiver);
                     break;
                 }
                 case 4: {

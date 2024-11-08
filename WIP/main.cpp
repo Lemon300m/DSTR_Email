@@ -149,12 +149,33 @@ public:
     }
 };
 
+unordered_set<string> loadSpamWords(const string &filename) {
+    unordered_set<string> spamWords;
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: Could not open spam words file.\n";
+        return spamWords;
+    }
+
+    string word;
+    while (file >> word) {
+        spamWords.insert(word);
+    }
+    file.close();
+    return spamWords;
+}
+
 int main() {
     string time = getCurrentTimeAsString();
     LoginSystem system;
     string userfilePath = "users.txt";
     DoublyLinkedList inbox;
-    inbox.loadEmailsFromFile("emails.txt");
+
+    // Load spam words
+    unordered_set<string> spamWords = loadSpamWords("spam_words.txt");
+
+    // Load emails into the inbox
+    inbox.loadEmailsFromFile("emails.txt", spamWords);
 
     while (true) {
         int choice;
@@ -208,11 +229,12 @@ Select an action: )";
                                             case 1: {
                                                 Queue outbox;
                                                 displayMenu(outbox);
-                                                return 0;
+                                                return 0; // Exit the program after handling the outbox
                                                 break;
                                             }
                                             case 2:
-                                                inbox.inboxMenu();
+                                                // Pass the logged-in user's email and spamWords set to the inbox menu
+                                                inbox.inboxMenu(userDetails.email, spamWords);
                                                 break;
                                             case 3:
                                                 deleteAccount(userDetails.email, userfilePath);
