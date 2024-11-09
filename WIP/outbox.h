@@ -4,166 +4,222 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "commonFunction.h"
 
 using namespace std;
 
-// Struct to represent an email
 struct Email {
     string sender;
     string receiver;
     string title;
     string content;
-    Email* next;
-
-    Email(const string& s, const string& r, const string& t, const string& c)
-        : sender(s), receiver(r), title(t), content(c), next(nullptr) {}
+    string time; 
 };
 
-// Queue class to manage emails in the outbox
-class Queue {
-    Email* front;
-    Email* rear;
+struct Node {
+    Email email;
+    Node* next;
+    Node(const Email& emailData) : email(emailData), next(nullptr) {}
+};
+
+class EmailList {
+private:
+    Node* head;
+    int count;
 
 public:
-    Queue() : front(nullptr), rear(nullptr) {}
+    EmailList() : head(nullptr), count(0) {}
 
-    void enqueue(const string& sender, const string& receiver, const string& title, const string& content) {
-        Email* newEmail = new Email(sender, receiver, title, content);
-        if (rear == nullptr) {
-            front = rear = newEmail;
+    ~EmailList() {
+        clear();
+    }
+
+    void addEmail(const Email &email) {
+        Node* newNode = new Node(email);
+        if (!head) {
+            head = newNode;
         } else {
-            rear->next = newEmail;
-            rear = newEmail;
+            Node* temp = head;
+            while (temp->next) {
+                temp = temp->next;
+            }
+            temp->next = newNode;
+        }
+        count++;
+    }
+
+    int getCount() const { return count; }
+
+    // Marking getEmail as const and returning const Email&
+    const Email& getEmail(int index) const {
+        if (index < 0 || index >= count) {
+            throw out_of_range("Invalid index");
+        }
+        Node* temp = head;
+        for (int i = 0; i < index; ++i) {
+            temp = temp->next;
+        }
+        return temp->email;
+    }
+
+    void removeEmail(int index) {
+        if (index < 0 || index >= count) {
+            cout << "Invalid index\n";
+            return;
+        }
+        Node* temp = head;
+        if (index == 0) {
+            head = head->next;
+            delete temp;
+        } else {
+            Node* prev = nullptr;
+            for (int i = 0; i < index; ++i) {
+                prev = temp;
+                temp = temp->next;
+            }
+            prev->next = temp->next;
+            delete temp;
+        }
+        count--;
+    }
+
+    void displayEmails(const string& sender) const {
+        Node* temp = head;
+        while (temp) {
+            if (temp->email.sender == sender) {
+                cout << "Receiver: " << temp->email.receiver
+                     << "\nTitle: " << temp->email.title
+                     << "\nContent: " << temp->email.content
+                     << (temp->email.time.empty() ? "" : "\nTime: " + temp->email.time)
+                     << "\n\n";
+            }
+            temp = temp->next;
         }
     }
 
-    void dequeue() {
-        if (front == nullptr) {
-            cout << "Outbox is empty." << endl;
-            return;
+    void clear() {
+        while (head) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
         }
-        Email* temp = front;
-        front = front->next;
-        if (front == nullptr) rear = nullptr;
-        delete temp;
+        count = 0;
     }
+};
 
-    void sendEmail() {
-        if (front == nullptr) {
-            cout << "No emails to send. Outbox is empty." << endl;
-            return;
+class Outbox {
+private:
+    EmailList sentEmails;
+    EmailList drafts;
+    string currentUserEmail;
+
+public:
+    Outbox(const string &email) : currentUserEmail(email) {}
+
+    void sendEmail(const string& receiver, const string& title, const string& content, bool isDraft = false) {
+        string time = getCurrentTimeAsString();
+        Email email{currentUserEmail, receiver, title, content, isDraft ? "" : time};
+        if (isDraft) {
+            drafts.addEmail(email);
+            saveDraftsToFile();
+        } else {
+            sentEmails.addEmail(email);
+            saveEmailsToFile();
         }
-        cout << "Sending Email:\n";
-        cout << "Sender: " << front->sender 
-                  << ", Receiver: " << front->receiver
-                  << ", Title: " << front->title 
-                  << ", Content: " << front->content << "\n";
-        dequeue();
     }
 
     void displayOutbox() const {
-        Email* current = front;
-        if (current == nullptr) {
-            cout << "Outbox is empty." << endl;
-            return;
-        }
-        while (current) {
-            cout << "Sender: " << current->sender 
-                  << ", Receiver: " << current->receiver
-                  << ", Title: " << current->title 
-                  << ", Content: " << current->content << endl;
-            current = current->next;
+        sentEmails.displayEmails(currentUserEmail);
+    }
+
+    void modifyAndSendDraft() {
+        drafts.displayEmails(currentUserEmail);
+
+        int choice;
+        cout << "Enter the draft number to send or delete (1 to " << drafts.getCount() << "): ";
+        cin >> choice;
+        choice -= 1; // Adjust for array index
+
+        if (choice >= 0 && choice < drafts.getCount()) {
+            const Email& draft = drafts.getEmail(choice);
+            cout << "1. Send Draft\n2. Delete Draft\nChoose an option: ";
+            int option;
+            cin >> option;
+
+            if (option == 1) {
+                Email modifiedDraft = draft;
+                string time = getCurrentTimeAsString();
+                modifiedDraft.time = time;
+                sentEmails.addEmail(modifiedDraft);
+                drafts.removeEmail(choice);
+                saveEmailsToFile();
+                saveDraftsToFile();
+                cout << "Draft sent successfully.\n";
+            } else if (option == 2) {
+                drafts.removeEmail(choice);
+                saveDraftsToFile();
+                cout << "Draft deleted successfully.\n";
+            } else {
+                cout << "Invalid option.\n";
+            }
+        } else {
+            cout << "Invalid draft number.\n";
         }
     }
 
-    ~Queue() {
-        while (front) {
-            dequeue();
+    void saveEmailsToFile() const {
+        ofstream outFile("Emails.txt", ios::trunc);
+        for (int i = 0; i < sentEmails.getCount(); ++i) {
+            const Email& email = sentEmails.getEmail(i);
+            outFile << email.sender << "," << email.receiver << "," << email.title << "," << email.content << "," << email.time << "\n";
         }
     }
 
-    void saveToFile(const string& filename) const {
-        ofstream file(filename, ios::app);
-        Email* current = front;
-        while (current) {
-            file << current->sender << "," 
-                 << current->receiver << "," 
-                 << current->title << "," 
-                 << current->content << "\n";
-            current = current->next;
+    void saveDraftsToFile() const {
+        ofstream outFile("draft.txt", ios::trunc);
+        for (int i = 0; i < drafts.getCount(); ++i) {
+            const Email& email = drafts.getEmail(i);
+            outFile << email.sender << "," << email.receiver << "," << email.title << "," << email.content << "\n";
         }
-        file.close();
     }
 };
 
-void loadUserData(const string& filename) {
-    ifstream file(filename);
-    string email, passwd, username;
-    while (file >> email >> passwd >> username) {
-        cout << "Email: " << email << ", Username: " << username << endl;
-    }
-    file.close();
-}
+int main() {
+    string currentUserEmail;
+    cout << "Enter your email: ";
+    cin >> currentUserEmail;
 
-bool isSpam(const string& content, const string& spamFile) {
-    ifstream file(spamFile);
-    string spamWord;
-    while (file >> spamWord) {
-        if (content.find(spamWord) != string::npos) {
-            return true;
-        }
-    }
-    return false;
-}
+    Outbox outbox(currentUserEmail);
 
-void addEmail(Queue& outbox, const string& sender, const string& receiver, 
-              const string& title, const string& content, const string& spamFile) {
-    if (isSpam(content, spamFile)) {
-        cout << "Warning: This email contains spam words and may not be sent." << endl;
-    }
-    outbox.enqueue(sender, receiver, title, content);
-    outbox.saveToFile("emails.txt");
-}
-
-void displayMenu(Queue& outbox) {
-    string sender, receiver, title, content, spamFile = "spam_words.txt";
     int choice;
-
-    loadUserData("user.txt");
-
     do {
-        cout << "\nEmail Management System\n";
-        cout << "1. Add Email\n";
-        cout << "2. Display Outbox\n";
-        cout << "3. Send Email\n";
-        cout << "4. Exit\n";
-        cout << "Enter your choice: ";
+        cout << "\n1. Send Email\n2. Display Outbox\n3. Modify and Send Drafts\n4. Exit\n";
+        cout << "Choose an option: ";
         cin >> choice;
-        cin.ignore();
 
         switch (choice) {
-            case 1:
-                cout << "Enter sender email: ";
-                getline(cin, sender);
+            case 1: {
+                string receiver, title, content;
+                int isDraftOption;
                 cout << "Enter receiver email: ";
-                getline(cin, receiver);
-                cout << "Enter title: ";
+                cin >> receiver;
+                cout << "Enter email title: ";
+                cin.ignore();
                 getline(cin, title);
-                cout << "Enter content: ";
+                cout << "Enter email content: ";
                 getline(cin, content);
-
-                addEmail(outbox, sender, receiver, title, content, spamFile);
-                cout << "Email added to outbox.\n";
+                cout << "Save as Draft? (1 for Yes, 0 for No): ";
+                cin >> isDraftOption;
+                outbox.sendEmail(receiver, title, content, isDraftOption);
+                cout << (isDraftOption ? "Draft saved.\n" : "Email sent.\n");
                 break;
-
+            }
             case 2:
-                cout << "\nOutbox contents:\n";
                 outbox.displayOutbox();
                 break;
 
             case 3:
-                cout << "\nSending email:\n";
-                outbox.sendEmail();
+                outbox.modifyAndSendDraft();
                 break;
 
             case 4:
@@ -174,6 +230,8 @@ void displayMenu(Queue& outbox) {
                 cout << "Invalid choice. Please try again.\n";
         }
     } while (choice != 4);
+
+    return 0;
 }
 
 #endif // EMAIL_MANAGEMENT_H

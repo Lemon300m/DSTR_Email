@@ -277,10 +277,11 @@ public:
         return lowerStr;
     }
 
-    void inboxMenu(const string &receiver ,string spamWords[], int spamWordCount) {
+    void inboxMenu(const string &receiver) {
         int choice;
         do {
-            cout << "\nInbox Management\n";
+            clearScreen();
+            cout << "Inbox Management\n";
             cout << "1. View All Received Emails\n";
             cout << "2. View Spam Emails\n";
             cout << "3. View Filtered Email by Position (No Spam)\n";
@@ -294,12 +295,15 @@ public:
 
             switch (choice) {
                 case 1:
+                    clearScreen();
                     displayEmails(receiver, false);
                     break;
                 case 2:
+                    clearScreen();
                     displaySpamEmails();  // Show only spam emails
                     break;
                 case 3: {
+                    clearScreen();
                     int position;
                     cout << "Enter position to view: ";
                     cin >> position;
@@ -307,6 +311,7 @@ public:
                     break;
                 }
                 case 4: {
+                    clearScreen();
                     int position;
                     cout << "Enter position to delete: ";
                     cin >> position;
@@ -314,13 +319,15 @@ public:
                     break;
                 }
                 case 5: {
-                int position;
-                cout << "Enter position to delete from spam: ";
-                cin >> position;
-                deleteEmail(position, receiver, true);
-                break;
+                    clearScreen();
+                    int position;
+                    cout << "Enter position to delete from spam: ";
+                    cin >> position;
+                    deleteEmail(position, receiver, true);
+                    break;
                 }
                 case 6: {
+                    clearScreen();
                     cin.ignore();
                     string sender;
                     cout << "Enter sender to search: ";
@@ -329,6 +336,7 @@ public:
                     break;
                 }
                 case 7: {
+                    clearScreen();
                     cin.ignore();
                     string title;
                     cout << "Enter title to search: ";
@@ -338,6 +346,8 @@ public:
                 }
                 case 0:
                     cout << "Returning to main menu...\n";
+                    wait(1000);
+                    clearScreen();
                     break;
                 default:
                     cout << "Invalid choice. Try again.\n";
