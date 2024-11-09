@@ -7,7 +7,7 @@
 
 #include "commonFunction.h"
 #include "outbox.h"    //If you are working on inbox, comment away line 9 and also line 209~211
-#include "inbox.h"    //If you are working on outbox, comment away line 10 and also line 215
+#include "inbox.h"     //If you are working on outbox, comment away line 10 and also line 215
 #include "deleteAccount.h"
 #include "createAccount.h"
 #include "windows.h"
@@ -149,21 +149,29 @@ public:
     }
 };
 
-unordered_set<string> loadSpamWords(const string &filename) {
-    unordered_set<string> spamWords;
+// Array to store spam words and count
+string spamWords[100];
+int spamWordCount = 0;
+
+// Function to load spam words from file
+void loadSpamWords(const string &filename, string spamWords[], int &spamWordCount) {
     ifstream file(filename);
     if (!file.is_open()) {
         cerr << "Error: Could not open spam words file.\n";
-        return spamWords;
+        return;
     }
 
-    string word;
-    while (file >> word) {
-        spamWords.insert(word);
+    string line;
+    spamWordCount = 0;  // Reset count before loading
+    while (getline(file, line) && spamWordCount < 100) {  // Read each line as a separate word
+        line = trim(line);  // Remove any leading or trailing whitespace (if necessary)
+        if (!line.empty()) {  // Only add non-empty lines
+            spamWords[spamWordCount++] = line;
+        }
     }
     file.close();
-    return spamWords;
 }
+
 
 int main() {
     string time = getCurrentTimeAsString();
@@ -172,10 +180,13 @@ int main() {
     DoublyLinkedList inbox;
 
     // Load spam words
-    unordered_set<string> spamWords = loadSpamWords("spam_words.txt");
+    loadSpamWords("spam_words.txt", spamWords, spamWordCount);
 
+    for (int i = 0; i < spamWordCount; ++i) {
+        cout << "Loaded spam word: " << spamWords[i] << endl;
+    }
     // Load emails into the inbox
-    inbox.loadEmailsFromFile("emails.txt", spamWords);
+    inbox.loadEmailsFromFile("emails.txt");
 
     while (true) {
         int choice;
@@ -234,13 +245,14 @@ Select an action: )";
                                             }
                                             case 2:
                                                 // Pass the logged-in user's email and spamWords set to the inbox menu
-                                                inbox.inboxMenu(userDetails.email, spamWords);
+                                                inbox.inboxMenu(userDetails.email, spamWords, spamWordCount);
                                                 break;
                                             case 3:
                                                 deleteAccount(userDetails.email, userfilePath);
                                                 logOut = true;
                                                 system.logout();
                                                 break;
+                        
                                             case 0:
                                                 logOut = true;
                                                 system.logout();
