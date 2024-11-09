@@ -7,7 +7,6 @@
 #include <string>
 #include <algorithm>
 #include <cctype>
-#include <unordered_set>
 
 using namespace std;
 
@@ -37,17 +36,47 @@ class DoublyLinkedList {
 private:
     Node *head;
     Node *tail;
+    Node *spamHead;  // Head pointer for spam list
+    Node *spamTail;
+    string spamSymbols = "!#$%^&*";
+    string spamWords[100];  // Array to store spam words
+    int spamWordCount = 0;  // Counter for loaded spam words
 
-    bool isSpam(const string &content, const unordered_set<string> &spamWords) const {
-        for (const auto &word : spamWords) {
-            if (content.find(word) != string::npos) {
+    void loadSpamWords(const string &filename) {
+        ifstream file(filename);
+        if (!file.is_open()) {
+            cout << "Failed to open the spam words file.\n";
+            return;
+        }
+
+        string word;
+        while (file >> word && spamWordCount < 100) {  // Limit to 100 words
+            spamWords[spamWordCount++] = word;
+        }
+        file.close();
+    }
+
+    bool isSpam(const string &subject, const string &content) const {
+    for (int i = 0; i < spamWordCount; ++i) {
+        if (subject.find(spamWords[i]) != string::npos || content.find(spamWords[i]) != string::npos) {
+            return true;
+        }
+    }
+    return false;
+    }
+
+
+    bool containsSpamWords(const string &text) const {
+        // Checks if any spam word is present in the given text
+        for (int i = 0; i < spamWordCount; ++i) {
+            if (text.find(spamWords[i]) != string::npos) {
                 return true;
             }
         }
         return false;
     }
 
-    Node *getNodeByPosition(int position) const {
+    Node *getNodeByPosition(int position ,bool isSpamList) const {
         int currentIndex = 1;
         Node *current = head;
         while (current != nullptr) {
@@ -61,7 +90,9 @@ private:
     }
 
 public:
-    DoublyLinkedList() : head(nullptr), tail(nullptr) {}
+    DoublyLinkedList() : head(nullptr), tail(nullptr),spamHead(nullptr), spamTail(nullptr) {
+        loadSpamWords("spam_words.txt");  // Load spam words on initialization
+    }
 
     ~DoublyLinkedList() {
         Node *current = head;
@@ -70,19 +101,41 @@ public:
             delete current;
             current = nextNode;
         }
-    }
 
-    void addEmail(const string &sender, const string &receiver, const string &subject, const string &content, const unordered_set<string> &spamWords) {
-        bool spamFlag = isSpam(content, spamWords);
-        Node *newNode = new Node(InboxEmail(sender, receiver, subject, content, spamFlag));
-        if (tail == nullptr) { // List is empty
-            head = tail = newNode;
-        } else {
-            tail->next = newNode;
-            newNode->prev = tail;
-            tail = newNode;
+        current = spamHead;
+        while (current != nullptr) {
+            Node *nextNode = current->next;
+            delete current;
+            current = nextNode;
         }
     }
+
+    void addEmail(const string &sender, const string &receiver, const string &subject, const string &content) 
+    {
+        bool spamFlag = isSpam(subject, content);
+        Node *newNode = new Node(InboxEmail(sender, receiver, subject, content, spamFlag));
+        
+        if (spamFlag) {
+            // Add to spam list
+            if (spamTail == nullptr) {
+                spamHead = spamTail = newNode;
+            } else {
+                spamTail->next = newNode;
+                newNode->prev = spamTail;
+                spamTail = newNode;
+            }
+        } else {
+            // Add to main inbox list
+            if (tail == nullptr) {
+                head = tail = newNode;
+            } else {
+                tail->next = newNode;
+                newNode->prev = tail;
+                tail = newNode;
+            }
+        }
+    }
+
 
     void displayEmails(const string &receiver, bool includeSpam) const {
         if (head == nullptr) {
@@ -103,8 +156,29 @@ public:
         }
     }
 
-    void viewEmail(int position, const string &receiver) const {
-        Node *node = getNodeByPosition(position);
+
+
+    void displaySpamEmails() const {
+        if (spamHead == nullptr) {
+            cout << "Spam folder is empty.\n";
+            return;
+        }
+
+        Node *current = spamHead;
+        int position = 1;
+        cout << "No\tSender\t\tSubject\n";
+        while (current != nullptr) {
+            const InboxEmail &email = current->email;
+            cout << position << "\t" << email.sender << "\t\t" << email.subject << "\n";
+            position++;
+            current = current->next;
+        }
+    }
+
+
+
+    void viewEmail(int position, const string &receiver, bool isSpamList) const {
+        Node *node = getNodeByPosition(position,isSpamList);
         if (node == nullptr || node->email.receiver != receiver || node->email.isSpam) {
             cout << "Email not found or is marked as spam.\n";
             return;
@@ -117,8 +191,8 @@ public:
         cout << "Content:\n" << email.content << "\n";
     }
 
-    void deleteEmail(int position, const string &receiver) {
-        Node *node = getNodeByPosition(position);
+    void deleteEmail(int position, const string &receiver,bool isSpamList) {
+        Node *node = getNodeByPosition(position, isSpamList);
         if (node == nullptr || node->email.receiver != receiver) {
             cout << "Email not found.\n";
             return;
@@ -127,12 +201,14 @@ public:
         if (node->prev) {
             node->prev->next = node->next;
         } else {
-            head = node->next;
+            if (isSpamList) spamHead = node->next;
+            else head = node->next;
         }
         if (node->next) {
             node->next->prev = node->prev;
         } else {
-            tail = node->prev;
+            if (isSpamList) spamTail = node->prev;
+            else tail = node->prev;
         }
         delete node;
 
@@ -173,7 +249,7 @@ public:
         }
     }
 
-    void loadEmailsFromFile(const string &filename, const unordered_set<string> &spamWords) {
+    void loadEmailsFromFile(const string &filename) {
         ifstream file(filename);
         if (!file.is_open()) {
             cout << "Failed to open the file: " << filename << "\n";
@@ -188,7 +264,7 @@ public:
                 getline(emailStream, receiver, ',') &&
                 getline(emailStream, subject, ',') &&
                 getline(emailStream, content)) {
-                addEmail(sender, receiver, subject, content, spamWords);
+                addEmail(sender, receiver, subject, content);
             }
         }
         file.close();
@@ -201,46 +277,58 @@ public:
         return lowerStr;
     }
 
-    void inboxMenu(const string &receiver, const unordered_set<string> &spamWords) {
+    void inboxMenu(const string &receiver ,string spamWords[], int spamWordCount) {
         int choice;
         do {
             cout << "\nInbox Management\n";
             cout << "1. View All Received Emails\n";
-            cout << "2. View Filtered Email by Position (No Spam)\n";
-            cout << "3. Delete Email by Position\n";
-            cout << "4. Search Email by Sender\n";
-            cout << "5. Search Email by Title\n";
+            cout << "2. View Spam Emails\n";
+            cout << "3. View Filtered Email by Position (No Spam)\n";
+            cout << "4. Delete Email by Position\n";
+            cout << "5. Delete Spam Email by Position\n";
+            cout << "6. Search Email by Sender\n";
+            cout << "7. Search Email by Title\n";
             cout << "0. Return to Main Menu\n";
             cout << "Enter your choice: ";
             cin >> choice;
 
             switch (choice) {
                 case 1:
-                    displayEmails(receiver, true);
+                    displayEmails(receiver, false);
                     break;
-                case 2: {
+                case 2:
+                    displaySpamEmails();  // Show only spam emails
+                    break;
+                case 3: {
                     int position;
                     cout << "Enter position to view: ";
                     cin >> position;
-                    viewEmail(position, receiver);
-                    break;
-                }
-                case 3: {
-                    int position;
-                    cout << "Enter position to delete: ";
-                    cin >> position;
-                    deleteEmail(position, receiver);
+                    viewEmail(position, receiver,false);
                     break;
                 }
                 case 4: {
+                    int position;
+                    cout << "Enter position to delete: ";
+                    cin >> position;
+                    deleteEmail(position, receiver,false);
+                    break;
+                }
+                case 5: {
+                int position;
+                cout << "Enter position to delete from spam: ";
+                cin >> position;
+                deleteEmail(position, receiver, true);
+                break;
+                }
+                case 6: {
                     cin.ignore();
                     string sender;
                     cout << "Enter sender to search: ";
                     getline(cin, sender);
-                    searchBySender(sender);
+                        (sender);
                     break;
                 }
-                case 5: {
+                case 7: {
                     cin.ignore();
                     string title;
                     cout << "Enter title to search: ";
