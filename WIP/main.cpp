@@ -206,9 +206,9 @@ Select an action: )";
                                     } else {
                                         switch (action) {
                                             case 1: {
-                                                // Queue outbox;
-                                                // displayMenu(outbox);
-                                                // return 0;
+                                                Outbox outbox(userDetails.email);
+                                                outboxMenu(outbox);
+                                                return 0;
                                                 break;
                                             }
                                             case 2:
