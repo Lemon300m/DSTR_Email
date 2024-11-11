@@ -16,10 +16,11 @@ struct InboxEmail {
     string receiver;
     string subject;
     string content;
+    string timestamp;
     bool isSpam;
 
-    InboxEmail(const string &sender, const string &receiver, const string &subject, const string &content, bool isSpam)
-        : sender(sender), receiver(receiver), subject(subject), content(content), isSpam(isSpam) {}
+    InboxEmail(const string &sender, const string &receiver, const string &subject, const string &content, const string &timestamp, bool isSpam)
+        : sender(sender), receiver(receiver), subject(subject), content(content), timestamp(timestamp), isSpam(isSpam) {}
 };
 
 // Node for the doubly linked list
@@ -110,13 +111,10 @@ public:
         }
     }
 
-    void addEmail(const string &sender, const string &receiver, const string &subject, const string &content) 
-    {
+    void addEmail(const string &sender, const string &receiver, const string &subject, const string &content, const string &timestamp) {
         bool spamFlag = isSpam(subject, content);
-        Node *newNode = new Node(InboxEmail(sender, receiver, subject, content, spamFlag));
-        
+        Node *newNode = new Node(InboxEmail(sender, receiver, subject, content, timestamp, spamFlag));
         if (spamFlag) {
-            // Add to spam list
             if (spamTail == nullptr) {
                 spamHead = spamTail = newNode;
             } else {
@@ -125,7 +123,6 @@ public:
                 spamTail = newNode;
             }
         } else {
-            // Add to main inbox list
             if (tail == nullptr) {
                 head = tail = newNode;
             } else {
@@ -135,6 +132,7 @@ public:
             }
         }
     }
+
 
 
     void displayEmails(const string &receiver, bool includeSpam) const {
@@ -257,19 +255,49 @@ public:
         }
 
         string line;
+        string delimiter = "|||";
         while (getline(file, line)) {
-            stringstream emailStream(line);
-            string sender, receiver, subject, content;
-            if (getline(emailStream, sender, ',') &&
-                getline(emailStream, receiver, ',') &&
-                getline(emailStream, subject, ',') &&
-                getline(emailStream, content)) {
-                addEmail(sender, receiver, subject, content);
-            }
+            size_t pos = 0;
+            string sender, receiver, subject, content, timestamp;
+
+            // Extract sender
+            pos = line.find(delimiter);
+            if (pos != string::npos) {
+                sender = line.substr(0, pos);
+                line.erase(0, pos + delimiter.length());
+            } else { continue; }
+
+            // Extract receiver
+            pos = line.find(delimiter);
+            if (pos != string::npos) {
+                receiver = line.substr(0, pos);
+                line.erase(0, pos + delimiter.length());
+            } else { continue; }
+
+            // Extract subject
+            pos = line.find(delimiter);
+            if (pos != string::npos) {
+                subject = line.substr(0, pos);
+                line.erase(0, pos + delimiter.length());
+            } else { continue; }
+
+            // Extract content
+            pos = line.find(delimiter);
+            if (pos != string::npos) {
+                content = line.substr(0, pos);
+                line.erase(0, pos + delimiter.length());
+            } else { continue; }
+
+            // The remaining part is the timestamp
+            timestamp = line;
+
+            // Add email to the inbox list
+            addEmail(sender, receiver, subject, content, timestamp);
         }
         file.close();
         cout << "Emails loaded successfully from " << filename << ".\n";
     }
+
 
     static string toLower(const string &str) {
         string lowerStr = str;
@@ -280,7 +308,6 @@ public:
     void inboxMenu(const string &receiver) {
         int choice;
         do {
-            clearScreen();
             cout << "Inbox Management\n";
             cout << "1. View All Received Emails\n";
             cout << "2. View Spam Emails\n";

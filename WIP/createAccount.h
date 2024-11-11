@@ -51,10 +51,11 @@ inline void createAccount(const string& filePath) {
     bool isAvailable = true;
 
     if (file.is_open()) {
+        string delimiter = "|||";
         while (getline(file, line)) {
-            size_t firstComma = line.find(',');
-            if (firstComma != string::npos) {
-                existingEmail = line.substr(0, firstComma);
+            size_t pos = line.find(delimiter);
+            if (pos != string::npos) {
+                existingEmail = line.substr(0, pos);
                 if (existingEmail == email) {
                     isAvailable = false;
                     break;
@@ -81,7 +82,7 @@ inline void createAccount(const string& filePath) {
     // Save the new user information to the file
     ofstream outFile(filePath, ios::app);
     if (outFile.is_open()) {
-        outFile << email << ", " << password << ", " << username << "\n";
+        outFile << email << "|||" << password << "|||" << username << "\n";
         outFile.close();
         cout << "User successfully registered! Please log in.\n";
     } else {

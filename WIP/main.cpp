@@ -6,7 +6,7 @@
 #include <cstdlib>
 
 #include "commonFunction.h"
-// #include "outbox.h"     //still in progress so will be commented out for now
+#include "outbox.h"     //still in progress so will be commented out for now
 #include "inbox.h"
 #include "deleteAccount.h"
 #include "createAccount.h"
@@ -26,7 +26,6 @@ private:
     User* head;
     bool isLoggedIn;
     string filePath;
-
     string email, passwd, name;
 
     void loadUserData() {
@@ -44,25 +43,37 @@ private:
             return;
         }
 
-        string line;
+        string line, delimiter = "|||";
         while (getline(file, line)) {
-            istringstream ss(line);
+            size_t pos = 0;
             string email, password, name;
 
-            // Parse the line assuming the format: email, password, name
-            if (getline(ss, email, ',') &&
-                getline(ss, password, ',') &&
-                getline(ss, name, ',')) {
-
-                // Trim whitespace from parsed fields
-                email = trim(email);
-                password = trim(password);
-                name = trim(name);
-
-                addUserToLinkedList(email, password, name);
+            // Extract email
+            if ((pos = line.find(delimiter)) != string::npos) {
+                email = line.substr(0, pos);
+                line.erase(0, pos + delimiter.length());
             } else {
                 cerr << "Error reading line: " << line << "\n";
+                continue;
             }
+
+            // Extract password
+            if ((pos = line.find(delimiter)) != string::npos) {
+                password = line.substr(0, pos);
+                line.erase(0, pos + delimiter.length());
+            } else {
+                cerr << "Error reading line: " << line << "\n";
+                continue;
+            }
+
+            // The remaining part is the name
+            name = line;
+
+            email = trim(email);
+            password = trim(password);
+            name = trim(name);
+
+            addUserToLinkedList(email, password, name);
         }
         file.close();
     }
@@ -170,6 +181,7 @@ Main Menu:
 Choose an option: )";
             cin >> choice;
             if (!(valid_input = !cin.fail())) { 
+                clearScreen();
                 cout << "That input is invalid!\n";
                 cin.clear();
                 cin.ignore((numeric_limits<streamsize>::max)(), '\n');
@@ -208,8 +220,7 @@ Select an action: )";
                                             case 1: {
                                                 Outbox outbox(userDetails.email);
                                                 outboxMenu(outbox);
-                                                return 0;
-                                                break;
+                                                break;  
                                             }
                                             case 2:
                                                 inbox.inboxMenu(userDetails.email);

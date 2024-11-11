@@ -1,17 +1,1 @@
-jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
-bob@gmail.com,grace@yahoo.com,Project Details,Here are the project details you requested.
-david@outlook.com,john@gmail.com,Follow-up,Can you provide an update on the last meeting?
-user1@example.com,user2@example.com,Meeting Update,Please note the meeting is rescheduled.
-jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
-jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
-jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
-jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
-jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
-jane@outlook.com,irene@yahoo.com,Meeting Update,Please note the meeting is rescheduled.
-david@outlook.com,irene@yahoo.com,Follow-up,Can you provide an update on the last meeting?
-user1@example.com,user2@example.com,Meeting Update,Please note the meeting is rescheduled.
-jane@outlook.com,irene@yahoo.com,Special Offer,Congratulations! You have won a prize! Claim your free reward now.
-bob@gmail.com,grace@yahoo.com,Discount Alert,Get a special discount on your next purchase. Don’t miss out on this exclusive offer!
-david@outlook.com,john@gmail.com,Prize Notification,Win big with our free prize draw! Enter now to claim your prize.
-user1@example.com,user2@example.com,Exciting Offer,Congratulations on receiving a special offer just for you!
-jane@outlook.com,irene@yahoo.com,Limited-Time Deal,Take advantage of this limited-time discount before it ends.
+john@gmail.com|||test@g|||Lestgo|||U know, I kinda lazy|||11 Nov 2024, 11:01.30

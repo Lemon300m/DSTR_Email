@@ -1,11 +1,11 @@
-jane@outlook.com, 456, Jane
-alice@yahoo.com, 789, Alice
-bob@gmail.com, 012, Bob
-charlie@yahoo.com, 345, Charlie
-david@outlook.com, 678, David
-emma@yahoo.com, 901, Emma
-frank8@outlook.com, 234, Frank
-grace@yahoo.com, 567, Grace
-henry@outlook.com, 890, Henry
-irene@yahoo.com, 1234, Irene
-john@gmail.com, 123, John
+jane@outlook.com|||456|||Jane
+alice@yahoo.com|||789|||Alice
+bob@gmail.com|||012|||Bob
+charlie@yahoo.com|||345|||Charlie
+david@outlook.com|||678|||David
+emma@yahoo.com|||901|||Emma
+frank8@outlook.com|||234|||Frank
+grace@yahoo.com|||567|||Grace
+henry@outlook.com|||890|||Henry
+irene@yahoo.com|||1234|||Irene
+john@gmail.com|||123|||John

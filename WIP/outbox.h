@@ -52,6 +52,7 @@ public:
 
     // Display Outbox
     void displayOutbox() const {
+        clearScreen();
         EmailNode* current = sentEmailsHead;
         int count = 0;
         while (current != nullptr) {
@@ -68,6 +69,7 @@ public:
 
     // Modify and Send Drafts
     void modifyAndSendDrafts() {
+        clearScreen();
         EmailNode* current = draftsHead;
         int count = 0;
         while (current != nullptr) {
@@ -97,7 +99,7 @@ public:
             prev = selectedDraft;
             selectedDraft = selectedDraft->next;
         }
-
+        clearScreen();
         int action;
         cout << "1. Send\n2. Delete\nChoose action: ";
         cin >> action;
@@ -108,33 +110,42 @@ public:
             selectedDraft->next = sentEmailsHead;
             sentEmailsHead = selectedDraft;
             saveEmails();
+            clearScreen();
             cout << "Draft sent.\n";
         } else if (action == 2) {  // Delete draft
             removeDraft(selectedDraft, prev);
             delete selectedDraft;
+            clearScreen();
             cout << "Draft deleted.\n";
         } else {
+            clearScreen();
             cout << "Invalid action.\n";
         }
     }
 
-    // Save sent emails to Emails.txt
     void saveEmails() const {
         ofstream outFile("Emails.txt");
         EmailNode* current = sentEmailsHead;
         while (current != nullptr) {
-            outFile << current->email.sender << "," << current->email.receiver << "," << current->email.subject << "," << current->email.content << "," << current->email.time << "\n";
+            outFile << current->email.sender << "|||" 
+                    << current->email.receiver << "|||"
+                    << current->email.subject << "|||"
+                    << current->email.content << "|||"
+                    << current->email.time << "\n";
             current = current->next;
         }
         outFile.close();
     }
 
-    // Save drafts to Drafts.txt
+    // Save drafts to Drafts.txt (without the timestamp)
     void saveDrafts() const {
         ofstream outFile("Drafts.txt");
         EmailNode* current = draftsHead;
         while (current != nullptr) {
-            outFile << current->email.sender << "," << current->email.receiver << "," << current->email.subject << "," << current->email.content << "\n";
+            outFile << current->email.sender << "|||"
+                    << current->email.receiver << "|||"
+                    << current->email.subject << "|||"
+                    << current->email.content << "\n";
             current = current->next;
         }
         outFile.close();
@@ -169,12 +180,13 @@ private:
 void outboxMenu(Outbox& outbox) {
     int choice;
     do {
-        cout << "\n1. Send Email\n2. Display Outbox\n3. Modify and Send Drafts\n4. Exit\n";
+        cout << "\n1. Send Email\n2. Display Outbox\n3. Modify and Send Drafts\n0. Exit\n";
         cout << "Choose an option: ";
         cin >> choice;
 
         switch (choice) {
             case 1: {
+                clearScreen();
                 string receiver, subject, content;
                 int isDraftOption;
                 cout << "Enter receiver email: ";
@@ -196,13 +208,13 @@ void outboxMenu(Outbox& outbox) {
             case 3:
                 outbox.modifyAndSendDrafts();
                 break;
-            case 4:
+            case 0:
                 cout << "Exiting outbox menu.\n";
                 break;
             default:
                 cout << "Invalid choice. Please try again.\n";
         }
-    } while (choice != 4);
+    } while (choice != 3);
 }
 
 #endif // OUTBOX_H
